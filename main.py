@@ -9,17 +9,16 @@ from model import predict_october_low
 # Configuration
 ORIGIN = "SFO"
 DESTINATION = "MCO"
-
-API_KEY = os.getenv("SERPAPI_KEY")
+# Use GitHub Secrets / Streamlit Secrets for the API Key
+API_KEY = os.getenv("SERPAPI_KEY") 
 
 def fetch_october_deals():
-    # Using the standard Flights engine for a specific date in October
     params = {
         "engine": "google_flights",
         "departure_id": ORIGIN,
         "arrival_id": DESTINATION,
-        "outbound_date": "2026-10-15", # Pick a mid-month date
-        "return_date": "2026-10-22",   # 1 week trip
+        "outbound_date": "2026-10-15",
+        "return_date": "2026-10-22",
         "currency": "USD",
         "hl": "en",
         "gl": "us",
@@ -29,63 +28,68 @@ def fetch_october_deals():
         search = GoogleSearch(params)
         results = search.get_dict()
         
-        # We look at the 'best_flights' category
-        best_option = results.get("best_flights", [{}])[0]
+        # Check for errors in the API response first
+        if "error" in results:
+            print(f"⚠️ API Error Message: {results['error']}")
+            return None, None, None
+
+        # Look for the 'best_flights' list
+        best_flights = results.get("best_flights", [])
         
-        if best_option:
-            price = best_option.get("price")
+        if best_flights:
+            top_flight = best_flights[0]
+            price = top_flight.get("price")
             
-            # Extracting the details of the first leg
-            first_leg = best_option.get("flights", [{}])[0]
-            airline = first_leg.get("airline")
-            dep_time = first_leg.get("departure_airport", {}).get("time")
-            arr_time = first_leg.get("arrival_airport", {}).get("time")
+            # Extract first leg details (Airline and Times)
+            first_leg = top_flight.get("flights", [{}])[0]
+            airline = first_leg.get("airline", "Unknown Airline")
+            dep_time = first_leg.get("departure_airport", {}).get("time", "N/A")
+            arr_time = first_leg.get("arrival_airport", {}).get("time", "N/A")
             
-            # Formatting a nice string for your database/Telegram
-            details = f"{airline} | Dep: {dep_time} | Arr: {arr_time}"
-            return price, details
+            time_info = f"{dep_time} to {arr_time}"
             
-        return None, None
+            return price, airline, time_info
+            
+        return None, None, None
     except Exception as e:
-        print(f"⚠️ API Error: {e}")
-        return None, None
+        print(f"⚠️ Script Error: {e}")
+        return None, None, None
 
 if __name__ == "__main__":
     init_db()
+    
+    # Catch exactly 3 values to avoid the "ValueError: not enough values to unpack"
     price, airline, times = fetch_october_deals()
     
-    if price:
-        # 1. Save to Database
+    if price is not None:
+        # 1. Save to Database (Ensure database.py save_price accepts 5 arguments)
         save_price(ORIGIN, DESTINATION, price, airline, times)
         
         # 2. Get AI Prediction
-        with sqlite3.connect("flights.db") as conn:
+        db_path = os.path.join(os.path.dirname(__file__), "flights.db")
+        with sqlite3.connect(db_path) as conn:
             df = pd.read_sql_query("SELECT * FROM price_history", conn)
         
         prediction = predict_october_low(df)
         
-        # 3. Logic for Alerts
+        # 3. Check for alerts
         min_p, _ = get_stats(ORIGIN, DESTINATION)
         
-        status_msg = f"Current: ${price} | AI Predicted: ${prediction}"
+        status_msg = f"Current: ${price} ({airline}) | AI Predicted: ${prediction}"
         print(status_msg)
 
-        # Trigger alert if it's a new low OR 10% below AI prediction
+        # Alert if current price is 10% lower than predicted OR lower than history
         is_deal = False
         if isinstance(prediction, (int, float)) and price <= (prediction * 0.9):
             is_deal = True
         
         if is_deal or (min_p and price < min_p):
-            alert_text = f"🔥 **AI BUY SIGNAL!**\nFound ${price} for {dates}.\nPrediction was ${prediction}."
-            send_telegram_alert(price, ORIGIN, DESTINATION, dates + "\n" + alert_text)
-
-        if price:
-            init_db() # Ensure table exists
-            save_price(ORIGIN, DESTINATION, price)
-        
-        # DEBUG: Check if it actually saved
-        with sqlite3.connect(os.path.join(os.path.dirname(__file__), "flights.db")) as conn:
+            alert_text = f"🔥 **AI BUY SIGNAL!**\n{airline} found for ${price}.\nSchedule: {times}"
+            send_telegram_alert(price, ORIGIN, DESTINATION, alert_text)
+            
+        # Debug row count
+        with sqlite3.connect(db_path) as conn:
             count = conn.execute("SELECT COUNT(*) FROM price_history").fetchone()[0]
-            print(f"📊 Total rows now in database: {count}") 
+            print(f"📊 Total database rows: {count}")
     else:
-        print("❌ No price data fetched. Check your API key or parameters.")          
+        print("❌ No flight data captured this run.")
