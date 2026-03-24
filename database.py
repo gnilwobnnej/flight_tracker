@@ -22,7 +22,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-def save_price(origin, destination, price):
+def save_price(origin, destination, price, airline, flight_times):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
