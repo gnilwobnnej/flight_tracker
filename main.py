@@ -56,7 +56,7 @@ if __name__ == "__main__":
     
     if price:
         # 1. Save to Database
-        save_price(ORIGIN, DESTINATION, price)
+        save_price(ORIGIN, DESTINATION, price, airline, times)
         
         # 2. Get AI Prediction
         with sqlite3.connect("flights.db") as conn:
