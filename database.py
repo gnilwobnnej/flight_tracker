@@ -14,7 +14,8 @@ def init_db():
             origin TEXT,
             destination TEXT,
             price REAL,
-            details TEXT,
+            airline TEXT,
+            flight_times TEXT,
             timestamp DATETIME
         )
     ''')
@@ -27,9 +28,9 @@ def save_price(origin, destination, price):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     cursor.execute('''
-        INSERT INTO price_history (origin, destination, price, timestamp)
-        VALUES (?, ?, ?, ?)
-    ''', (origin, destination, price, now))
+        INSERT INTO price_history (origin, destination, price, airline, flight_times, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (origin, destination, price, airline, flight_times, now))
     
     conn.commit()  # <--- This "pushes" the data to the file
     print(f"✅ Successfully saved ${price} to {DB_PATH}")
