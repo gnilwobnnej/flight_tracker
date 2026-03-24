@@ -1,0 +1,6 @@
+streamlit
+pandas
+scikit-learn
+plotly
+google-search-results
+requests
