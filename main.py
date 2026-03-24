@@ -52,7 +52,7 @@ def fetch_october_deals():
 
 if __name__ == "__main__":
     init_db()
-    price, dates = fetch_october_deals()
+    price, airline, times = fetch_october_deals()
     
     if price:
         # 1. Save to Database
