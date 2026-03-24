@@ -6,7 +6,7 @@ from database import DB_PATH
 
 st.set_page_config(page_title="October SFO-MCO Tracker", layout="wide")
 
-st.title("✈️ October Flight Price Tracker (SFO ➡️ MCO)")
+st.title("July 18th Flight Price Tracker (SFO ➡️ MCO)")
 st.subheader("AI-Powered Price Monitoring & Prediction")
 
 # 1. Load Data
@@ -47,7 +47,7 @@ else:
 # 5. Sidebar Setup
 st.sidebar.header("Tracker Settings")
 st.sidebar.write("**Route:** SFO ➡️ MCO")
-st.sidebar.write("**Target Month:** October 2026")
+st.sidebar.write("**Target Month:** July 18th 2026")
 
 if st.sidebar.button("Clear Cache"):
     st.cache_data.clear()
