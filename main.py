@@ -18,7 +18,7 @@ def fetch_october_deals():
         "departure_id": ORIGIN,
         "arrival_id": DESTINATION,
         "outbound_date": "2026-07-17",
-        "return_date": "2026-7-24",
+        "return_date": "2026-07-24",
         "currency": "USD",
         "hl": "en",
         "gl": "us",
