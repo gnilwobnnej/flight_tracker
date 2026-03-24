@@ -1,22 +1,47 @@
 import sqlite3
+import os
 from datetime import datetime
 
-DB_NAME = "flights.db"
+# This ensures the DB is created in the same folder as the script
+DB_PATH = os.path.join(os.path.dirname(__file__), "flights.db")
 
 def init_db():
-    with sqlite3.connect(DB_NAME) as conn:
-        conn.execute('''CREATE TABLE IF NOT EXISTS price_history 
-                     (id INTEGER PRIMARY KEY AUTOINCREMENT, origin TEXT, 
-                      destination TEXT, price REAL, timestamp DATETIME)''')
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS price_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            origin TEXT,
+            destination TEXT,
+            price REAL,
+            details TEXT,
+            timestamp DATETIME
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 def save_price(origin, destination, price):
-    with sqlite3.connect(DB_NAME) as conn:
-        conn.execute("INSERT INTO price_history (origin, destination, price, timestamp) VALUES (?, ?, ?, ?)",
-                     (origin, destination, price, datetime.now()))
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    cursor.execute('''
+        INSERT INTO price_history (origin, destination, price, timestamp)
+        VALUES (?, ?, ?, ?)
+    ''', (origin, destination, price, now))
+    
+    conn.commit()  # <--- This "pushes" the data to the file
+    print(f"✅ Successfully saved ${price} to {DB_PATH}")
+    conn.close()
 
 def get_stats(origin, destination):
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT MIN(price), AVG(price) FROM price_history WHERE origin = ? AND destination = ?", 
-                       (origin, destination))
-        return cursor.fetchone()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT MIN(price), AVG(price) FROM price_history 
+        WHERE origin = ? AND destination = ?
+    ''', (origin, destination))
+    row = cursor.fetchone()
+    conn.close()
+    return row if row else (None, None)

@@ -9,23 +9,36 @@ from model import predict_october_low
 # Configuration
 ORIGIN = "SFO"
 DESTINATION = "MCO"
+
 API_KEY = os.getenv("SERPAPI_KEY")
 
 def fetch_october_deals():
+    # Using the standard Flights engine for a specific date in October
     params = {
-        "engine": "google_travel_explore",
+        "engine": "google_flights",
         "departure_id": ORIGIN,
         "arrival_id": DESTINATION,
-        "month": "10",
+        "outbound_date": "2026-10-15", # Pick a mid-month date
+        "return_date": "2026-10-22",   # 1 week trip
         "currency": "USD",
+        "hl": "en",
+        "gl": "us",
         "api_key": API_KEY
     }
     try:
         search = GoogleSearch(params)
         results = search.get_dict()
-        if "results" in results and len(results["results"]) > 0:
-            top_deal = results["results"][0]
-            return top_deal.get("price"), top_deal.get("extensions", ["Dates unknown"])[0]
+        
+        # Standard Flights engine uses 'other_flights' or 'best_flights'
+        flights = results.get("best_flights", [])
+        
+        if flights:
+            top_flight = flights[0]
+            price = top_flight.get("price")
+            # Get the airline name for your Telegram alert
+            airline = top_flight.get("flights", [{}])[0].get("airline", "Unknown Airline")
+            return price, f"Oct 15-22 ({airline})"
+            
         return None, None
     except Exception as e:
         print(f"⚠️ API Error: {e}")
@@ -59,3 +72,14 @@ if __name__ == "__main__":
         if is_deal or (min_p and price < min_p):
             alert_text = f"🔥 **AI BUY SIGNAL!**\nFound ${price} for {dates}.\nPrediction was ${prediction}."
             send_telegram_alert(price, ORIGIN, DESTINATION, dates + "\n" + alert_text)
+
+        if price:
+            init_db() # Ensure table exists
+            save_price(ORIGIN, DESTINATION, price)
+        
+        # DEBUG: Check if it actually saved
+        with sqlite3.connect(os.path.join(os.path.dirname(__file__), "flights.db")) as conn:
+            count = conn.execute("SELECT COUNT(*) FROM price_history").fetchone()[0]
+            print(f"📊 Total rows now in database: {count}") 
+    else:
+        print("❌ No price data fetched. Check your API key or parameters.")          

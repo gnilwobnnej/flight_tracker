@@ -2,42 +2,53 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import plotly.express as px
-from model import predict_october_low
+from database import DB_PATH
 
-st.set_page_config(page_title="October Flight Tracker", page_icon="✈️")
+st.set_page_config(page_title="October SFO-MCO Tracker", layout="wide")
 
-st.title("✈️ SFO to MCO: October 2026 Tracker")
-st.markdown("This dashboard tracks the cheapest October flights found by your AI bot.")
+st.title("✈️ October Flight Price Tracker (SFO ➡️ MCO)")
+st.subheader("AI-Powered Price Monitoring & Prediction")
 
-# Load Data
+# 1. Load Data
 def load_data():
-    with sqlite3.connect("flights.db") as conn:
-        df = pd.read_sql_query("SELECT * FROM price_history ORDER BY timestamp DESC", conn)
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
+    conn = sqlite3.connect(DB_PATH)
+    # Added 'dates' to the query if you updated your database.py to save it
+    df = pd.read_sql_query("SELECT * FROM price_history ORDER BY timestamp DESC", conn)
+    conn.close()
     return df
 
 df = load_data()
 
 if not df.empty:
-    # --- TOP METRICS ---
+    # 2. Key Metrics
+    current_price = df.iloc[0]['price']
+    last_price = df.iloc[1]['price'] if len(df) > 1 else current_price
+    price_diff = current_price - last_price
+    
     col1, col2, col3 = st.columns(3)
-    latest_price = df.iloc[0]['price']
-    min_price = df['price'].min()
-    ai_pred = predict_october_low(df)
+    col1.metric("Current Best Price", f"${current_price}", f"{price_diff}$", delta_color="inverse")
+    col2.metric("October Floor (Min)", f"${df['price'].min()}")
+    col3.metric("Data Points Collected", len(df))
 
-    col1.metric("Current Lowest", f"${latest_price}")
-    col2.metric("All-Time Low", f"${min_price}")
-    col3.metric("AI Prediction (Tomorrow)", f"${ai_pred}")
-
-    # --- PRICE CHART ---
-    st.subheader("Price Trend Over Time")
-    fig = px.line(df, x='timestamp', y='price', title="Cheapest October Deals Found Each Day",
-                 labels={'price': 'Price (USD)', 'timestamp': 'Date Tracked'})
-    fig.update_traces(mode="lines+markers", line_color="#1f77b4")
+    # 3. Price Trend Chart
+    st.write("### 📈 Price Trend Over Time")
+    fig = px.line(df, x='timestamp', y='price', markers=True, 
+                 title="SFO to MCO Price History",
+                 labels={'timestamp': 'Check-in Time', 'price': 'Price (USD)'})
     st.plotly_chart(fig, use_container_width=True)
 
-    # --- DATA TABLE ---
-    if st.checkbox("Show raw history"):
-        st.dataframe(df)
+    # 4. Raw Data Table
+    st.write("### 📋 Recent Searches")
+    st.dataframe(df, use_container_width=True)
+    
 else:
-    st.info("No data found yet. Run main.py to collect your first flight price!")
+    st.info("No data found yet. Run your GitHub Action to collect the first price!")
+
+# 5. Sidebar Setup
+st.sidebar.header("Tracker Settings")
+st.sidebar.write("**Route:** SFO ➡️ MCO")
+st.sidebar.write("**Target Month:** October 2026")
+
+if st.sidebar.button("Clear Cache"):
+    st.cache_data.clear()
+    st.rerun()
