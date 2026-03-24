@@ -29,15 +29,21 @@ def fetch_october_deals():
         search = GoogleSearch(params)
         results = search.get_dict()
         
-        # Standard Flights engine uses 'other_flights' or 'best_flights'
-        flights = results.get("best_flights", [])
+        # We look at the 'best_flights' category
+        best_option = results.get("best_flights", [{}])[0]
         
-        if flights:
-            top_flight = flights[0]
-            price = top_flight.get("price")
-            # Get the airline name for your Telegram alert
-            airline = top_flight.get("flights", [{}])[0].get("airline", "Unknown Airline")
-            return price, f"Oct 15-22 ({airline})"
+        if best_option:
+            price = best_option.get("price")
+            
+            # Extracting the details of the first leg
+            first_leg = best_option.get("flights", [{}])[0]
+            airline = first_leg.get("airline")
+            dep_time = first_leg.get("departure_airport", {}).get("time")
+            arr_time = first_leg.get("arrival_airport", {}).get("time")
+            
+            # Formatting a nice string for your database/Telegram
+            details = f"{airline} | Dep: {dep_time} | Arr: {arr_time}"
+            return price, details
             
         return None, None
     except Exception as e:
