@@ -1,0 +1,41 @@
+name: October Flight Tracker Bot
+
+on:
+  schedule:
+    - cron: '0 10,22 * * *' # Runs at 10 AM and 10 PM UTC
+  workflow_dispatch: # Allows you to run it manually from the Actions tab
+
+jobs:
+  track_and_predict:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Crucial: Allows the bot to save the .db file
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-search-results pandas scikit-learn requests
+
+      - name: Run Tracker
+        env:
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python main.py
+
+      - name: Commit and Push Database Changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add flights.db
+          git diff-index --quiet HEAD || git commit -m "Update flight history: October SFO-MCO"
+          git push
