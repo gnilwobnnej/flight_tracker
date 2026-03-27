@@ -19,7 +19,7 @@ def predict_october_low(df):
     df['search_day_of_week'] = df['timestamp'].dt.dayofweek
     
     # Lead time: How many days until October 1st?
-    july_start = datetime(2026, 07, 17)
+    july_start = datetime(2026, 7, 17)
     df['days_until_july'] = (july_start - df['timestamp']).dt.days
     
     # 2. Prepare Features (X) and Target (y)
