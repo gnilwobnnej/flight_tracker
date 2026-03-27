@@ -19,11 +19,11 @@ def predict_october_low(df):
     df['search_day_of_week'] = df['timestamp'].dt.dayofweek
     
     # Lead time: How many days until October 1st?
-    october_start = datetime(2026, 10, 1)
-    df['days_until_october'] = (october_start - df['timestamp']).dt.days
+    july_start = datetime(2026, 07, 17)
+    df['days_until_july'] = (july_start - df['timestamp']).dt.days
     
     # 2. Prepare Features (X) and Target (y)
-    X = df[['search_day_of_week', 'days_until_october']]
+    X = df[['search_day_of_week', 'days_until_july']]
     y = df['price']
     
     # 3. Train the Model
@@ -33,7 +33,7 @@ def predict_october_low(df):
     # 4. Predict for Tomorrow
     tomorrow = datetime.now() + timedelta(days=1)
     tomorrow_day = tomorrow.weekday()
-    tomorrow_lead = (october_start - tomorrow).days
+    tomorrow_lead = (july_start - tomorrow).days
     
     prediction = model.predict([[tomorrow_day, tomorrow_lead]])[0]
     
