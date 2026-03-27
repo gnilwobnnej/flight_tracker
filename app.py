@@ -31,16 +31,16 @@ if not df.empty:
     col2.metric("October Floor (Min)", f"${df['price'].min()}")
     col3.metric("Data Points Collected", len(df))
 
-    # AI Prediction Display
-st.write("### 🤖 AI Price Prediction")
-if len(df) >= 3:
-    prediction = predict_october_low(df)
-    col1.metric("AI Predicted Price", f"${prediction}")
-    st.success(f"**Predicted July 17th Low: ${prediction}**")
-    if current_price <= (prediction * 0.9):
-        st.warning("🔥 This is a great deal! (10%+ below predicted low)")
-else:
-    st.info("Need at least 3 data points to generate a prediction.")
+        # AI Prediction Display
+    st.write("### 🤖 AI Price Prediction")
+    if len(df) >= 3:
+        prediction = predict_october_low(df)
+        col1.metric("AI Predicted Price", f"${prediction}")
+        st.success(f"**Predicted July 17th Low: ${prediction}**")
+        if current_price <= (prediction * 0.9):
+            st.warning("🔥 This is a great deal! (10%+ below predicted low)")
+    else:
+        st.info("Need at least 3 data points to generate a prediction.")
 
     # 3. Price Trend Chart
     st.write("### 📈 Price Trend Over Time")
@@ -53,7 +53,7 @@ else:
     st.write("### 📋 Recent Searches")
     st.dataframe(df, use_container_width=True)
     
-    else:
+ else:
     st.info("No data found yet. Run your GitHub Action to collect the first price!")
 
 # 5. Sidebar Setup
