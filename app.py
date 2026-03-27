@@ -53,7 +53,7 @@ else:
     st.write("### 📋 Recent Searches")
     st.dataframe(df, use_container_width=True)
     
-else:
+    else:
     st.info("No data found yet. Run your GitHub Action to collect the first price!")
 
 # 5. Sidebar Setup
