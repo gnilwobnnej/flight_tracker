@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import plotly.express as px
+from model import predict_october_low
 from database import DB_PATH
 
 st.set_page_config(page_title="October SFO-MCO Tracker", layout="wide")
@@ -29,6 +30,17 @@ if not df.empty:
     col1.metric("Current Best Price", f"${current_price}", f"{price_diff}$", delta_color="inverse")
     col2.metric("October Floor (Min)", f"${df['price'].min()}")
     col3.metric("Data Points Collected", len(df))
+
+    # AI Prediction Display
+st.write("### 🤖 AI Price Prediction")
+if len(df) >= 3:
+    prediction = predict_october_low(df)
+    col1.metric("AI Predicted Price", f"${prediction}")
+    st.success(f"**Predicted July 17th Low: ${prediction}**")
+    if current_price <= (prediction * 0.9):
+        st.warning("🔥 This is a great deal! (10%+ below predicted low)")
+else:
+    st.info("Need at least 3 data points to generate a prediction.")
 
     # 3. Price Trend Chart
     st.write("### 📈 Price Trend Over Time")
