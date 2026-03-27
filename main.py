@@ -13,6 +13,9 @@ DESTINATION = "MCO"
 API_KEY = os.getenv("SERPAPI_KEY") 
 
 def fetch_october_deals():
+    # Define which airlines you want to track (using IATA codes)
+    # Examples: UA (United), DL (Delta), AA (American), B6 (JetBlue), AS (Alaska)
+    target_airlines = "UA,DL,AS"
     params = {
         "engine": "google_flights",
         "departure_id": ORIGIN,
@@ -22,6 +25,7 @@ def fetch_october_deals():
         "currency": "USD",
         "hl": "en",
         "gl": "us",
+        "include_airlines": target_airlines,
         "api_key": API_KEY
     }
     try:
